@@ -1,6 +1,3 @@
-library(tidyverse)
-
-
 # sourse some packages and functions --------------------------------------
 
 # you can use Ctr+Shift+R to insert new code section - these show up in the toc
@@ -9,17 +6,7 @@ source("code/packages_and_functions.R")
 
 
 
-# working dir and session info --------------------------------------------
 
-#print the working directory
-getwd()
-#print the session and version info
-sessionInfo()
-rstudioapi::versionInfo()
-
-#save them to file
-writeLines(capture.output(sessionInfo()), "code/sessionInfo.txt")
-writeLines(capture.output(rstudioapi::versionInfo()), "code/versionInfo.txt")
 
 
 
@@ -29,7 +16,9 @@ writeLines(capture.output(rstudioapi::versionInfo()), "code/versionInfo.txt")
 
 iris %>%  #we use a pipe to input the data to ggplot
   ggplot(aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +  #we use + to add different elements of the plot
-  geom_point() +
+  geom_point(aes(shape=Species)) +
+  scale_shape_manual(values=c(3,18,22))+
+  scale_size_manual(values=c(1,2,3))+
   geom_smooth() +
   theme_minimal()
 
@@ -50,20 +39,30 @@ iris %>%
 
 
 # faceting ----------------------------------------------------------------
+#Facetting by species
 iris %>%  
   ggplot(aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
   geom_point() +
   theme_minimal() +
   facet_wrap(vars(Species))
 
+#Download dataset later
+ggplot(datasets:airquality)+
+  aes(x=Month,y=Ozone,colour=Day)+
+  geom_point(shape="circle filled",
+  size=1.5)+
+  scale_color_gradient()
+
+#install.packages("esquisse")
 #try the Esquisse 'ggplot2 builder' add-on
 library(esquisse)
-help("esquisse")
-
-
+#View port was weirdly shaped, use browser version if this occurs
+esquisse::esquisser(iris, viewer = "browser")
+esquisser()
 # modify legends ----------------------------------------------------------
 
 #another plot - changing the legends
+#iris_plot <- would put the plot into the environment
 iris %>%  
   ggplot(aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
   geom_point() +
@@ -71,11 +70,23 @@ iris %>%
   facet_wrap(vars(Species)) +
   labs(x = "x axis label", y = "y axis label") +
   theme_minimal() +
-  theme(legend.position = "left")
+  theme(legend.position = "top")
 
 #saving a plot
-ggsave("pictures/iris_test.png", bg = "white")
+#if multiple functions with the same name we could do
+#ggplot2:: ggsave(...)
+ggsave("pictures/iris_test.png", bg = "white",width = 5000, height = 5000, units="px")
 
+
+#Removing/Omiting NAs from Plot
+
+airquality %>% 
+  drop_na(Ozone) %>%
+  ggplot(aes(x = Ozone))+
+  geom_bar(stat="bin")
+#Imputation Of NAs - example
+ggplot(data = MyData,aes(x= the_variable, fill=the_variable, na.rm = TRUE)) + 
+  geom_bar(stat="bin", na.rm = TRUE)
 
 # Tibbles - tidy your data ------------------------------------------------
 
@@ -115,7 +126,9 @@ tb %>%
 
 Syn_data <- read_csv("data/a-Syn-Data.csv")
 Syn_data
-
+#manual changes for bec
+colnames(Syn_data) <- c("Time", "aSyn...2", "aSyn...3", "aSyn...4", "aSyn-DMSO...5" ,"aSyn-DMSO...6" ,"aSyn-DMSO...7", "aSyn_D2_13uM...8","aSyn_D2_13uM...9","aSyn_D2_13uM...10",   "aSyn_D3_0.67mM...11", "aSyn_D3_0.67mM...12", "aSyn_D3_0.67mM...13")
+colnames(Syn_data)
 #Need to do some tidying...
 
 #use piping %>% and pivot_longer to convert into long form
@@ -152,9 +165,10 @@ Ca %>%
   ggplot(aes(x = frame, y = intensity, color = genotype, 
              group = genotype)) +
   geom_smooth(level = 0.99, size = 0.5, span = 0.1, method = "loess") +
-  geom_line(aes(group = sample), size =  0.5, alpha = 0.1) +
-  theme_classic() +
+  geom_line(aes(group = sample), size =  0.5, alpha = 0.25) +
+  theme_dark() +
   facet_wrap(vars(cell))
+#Aes group used as without it would model it as a distribution/continuous 
 
 ggsave("pictures/Kei_NOS_data.png", bg = "white")
 
@@ -192,11 +206,18 @@ filo_raw_tb_int %>%
 
 ggsave("pictures/Tom_filo_data.png", bg = "white")
 
+#methods for smooth curves DRM (dose response model from drc package)
+# Creating a new section --------------------------------------------------
+
+#CTRL + SHIFT + R to insert a line break to create a new section, adding to the table of contents for the r file
 
 # Assemble multi-panel figures with cowplot and patchwork -----------------
 
 ### read the images with readPNG from pictures/ folder
-  
+
+
+#install.packages("magick")
+library(magick)
 img1 <- readPNG("pictures/Platynereis_SEM_inverted_nolabel.png")
 img2 <- readPNG("pictures/synuclein_data.png")
 img3 <- readPNG("pictures/Kei_NOS_data.png")
@@ -247,20 +268,25 @@ Figure1 <- panelA + panelB + panelC + panelD + panelE +
 ggsave("figures/Figure1.png", limitsize = FALSE, 
        units = c("px"), Figure1, width = 4000, height = 800, bg = "white")
 
-
+getwd()
 #Change the layout of the panels
   
 # Change the textual layout definition
 # We also need to change the dimensions of the exported figure
-
+#Cool Layout options
+#cowplot arrows
 layout <- 
-  "AABC
-   AADE"
-
+  "CCCCBBBB
+   CCCCBBBB
+   ##AAAAEE
+   ##AAAAEE
+   DDAAAAEE
+   DDAAAAEE"
 Figure1 <- panelA + panelB + panelC + panelD + panelE +
-  patchwork::plot_layout(design = layout, heights = c(1, 1)) +
+  patchwork::plot_layout(design = layout, widths = c(1,1), heights = c(1, 1)) +
   patchwork::plot_annotation(tag_levels = "a") &
   ggplot2::theme(plot.tag = element_text(size = 12, face='bold'))
-
+#can use external image editing software like fiji or gimp
 ggsave("figures/Figure1_layout2.png", limitsize = FALSE, 
-       units = c("px"), Figure1, width = 3200, height = 1600, bg = "white")
+       units = c("px"), Figure1, width = 5000, height = 3200, bg = "white")
+
